@@ -1,0 +1,120 @@
+#include <iostream>
+#include <thread>
+using namespace std;
+int minvalue = 999999999;
+int maxvalue = 0;
+int avg; 
+int med; 
+double stddev;
+
+void findmin(int *value, int size)
+{
+	for (int i = 0; i < size; i++)
+	{
+		if (value[i] < minvalue)
+			minvalue = value[i];
+	}
+	cout << "The minimum value of the array is " << minvalue << endl;
+	return;
+}
+
+void findmax(int *value, int size)
+{
+	int maxvalue = 0;
+	for (int i = 0; i < size; i++)
+	{
+		if (value[i] > maxvalue)
+			maxvalue = value[i];
+	}
+	cout << "The maximum value of the array is " << maxvalue  << endl;
+	return;
+}
+void findavg(int *value, int size)
+{
+	int sum = 0;
+	for (int i = 0; i < size; i++)
+	{
+	sum += value[i];
+	}
+	avg = sum / size;
+	cout << "The average of the array is " << avg << endl;
+	return;
+}
+void findmed(int *value, int size)
+{
+	int temp;
+	int med;
+	for (int i = 0; i < size; i++)
+	{
+		for (int j = 0; j < (size - i); j++)
+		{
+			if (value[j + 1] > value[j])
+			{
+				temp = value[j];
+				value[j] = value[j + 1];
+				value[j + 1] = temp;
+
+			}
+		}
+	}
+	if (size % 2 == 0)
+		med = (value[size / 2 - 1] + value[size / 2 + 1]) / 2;
+	else
+		med = value[size / 2];
+	cout << "The median of the array is " << med << endl;
+	return;
+}
+
+void findstddev(int *value, int size)
+{
+	double div = 2.0;
+	double sum = 0;
+	double mean;
+	for (int i = 0; i < size; i++)
+	{
+		sum += value[i];
+	}
+	mean = sum / size;
+	for (int i = 0; i < size; i++)
+	{
+		stddev += pow(value[i] - mean, div);
+	}
+	stddev = sqrt(stddev / (double)size);
+	cout << "The standard deviation of the array is " << stddev << endl;
+	return;
+}
+
+int main()
+{
+	int value[] = { 90, 81, 78, 95, 79, 72, 85 };
+	int size = sizeof(value)/sizeof(value[0]);
+
+	/*
+	thread minimum(findmin, value, size);
+	thread maximum(findmax, value, size);
+	thread average(findavg, value, size);
+	thread median(findmed, value, size);
+	thread stddev(findstddev, value, size);
+	minimum.join();
+	maximum.join();
+	average.join();
+	median.join();
+	stddev.join();
+	*/
+	
+	thread minimum(findmin, value, size);
+	minimum.join();
+	thread maximum(findmax, value, size);
+	maximum.join();
+	thread average(findavg, value, size);
+	average.join();
+	thread median(findmed, value, size);
+	median.join();
+	thread stddev(findstddev, value, size);
+	stddev.join();
+	return 0;
+}
+
+
+
+
