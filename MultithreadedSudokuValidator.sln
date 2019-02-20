@@ -1,0 +1,277 @@
+#include <iostream>
+#define HAVE_STRUCT_TIMESPEC
+#include <pthread.h>
+using namespace std;
+typedef struct
+{
+	//Starting row.
+	int row;
+	// Starting column.
+	int col;
+	//Pointer for sudoku board,
+	//sets up a nine space array for the row, column, and square calculations.
+	int(*sudoku)[9];
+} parameters;
+
+//Initializes a prototype row function, as to the main to exist before the void functions.
+void * rowsvalid(void * params);
+
+//Initializes a prototype column function.
+void * columnsvalid(void * params);
+
+//Initializes a prototype 3 by 3 square function.
+void * squaresvalid(void * params);
+
+/***************
+ * ENTRY POINT
+ **************/
+int main(void)
+{
+	//builds the board to be tested
+	
+	int sudokucomplete[9][9] = {
+		  {6,2,4,5,3,9,1,8,7},
+		  {5,1,9,7,2,8,6,3,4},
+		  {8,3,7,6,1,4,2,9,5},
+		  {1,4,3,8,6,5,7,2,9},
+		  {9,5,8,2,4,7,3,6,1},
+		  {7,6,2,3,9,1,4,5,8},
+		  {3,7,1,9,5,6,8,4,2},
+		  {4,9,6,1,8,2,5,7,3},
+		  {2,8,5,4,7,3,9,1,6}
+	};
+	
+	//Invalid Board Test
+	/*
+	int sudokucomplete[9][9] = {
+		{6,2,4,5,3,9,1,8,7},
+		{5,1,9,8,2,8,6,3,4},
+		{8,3,7,6,1,4,2,9,5},
+		{1,4,3,8,6,5,7,2,9},
+		{9,5,8,2,4,7,3,6,1},
+		{7,6,2,2,9,1,4,5,8},
+		{3,7,1,9,5,6,8,4,2},
+		{4,9,6,1,8,2,5,7,3},
+		{2,8,5,4,7,3,9,1,6}
+	};
+	*/
+	//Another Valid Board Test
+	/*
+	int sudokucomplete[9][9] =
+	{
+		{8,3,5,4,1,6,9,2,7},
+		{2,9,6,8,5,7,4,3,1},
+		{4,1,7,2,9,3,6,5,8},
+		{5,6,9,1,3,4,7,8,2},
+		{1,2,3,6,7,8,5,4,9},
+		{7,4,8,5,2,9,1,6,3},
+		{6,5,2,7,8,1,3,9,4},
+		{9,8,1,3,4,5,2,7,6},
+		{3,7,4,9,6,2,8,1,5}
+	};
+	*/
+	//Another Invalid Board Test
+	/*
+	int sudokucomplete[9][9] =
+	{
+		{8,3,5,4,1,6,9,2,7},
+		{2,9,6,8,5,7,4,3,1},
+		{4,1,7,2,9,3,6,5,8},
+		{5,6,9,1,3,4,7,2,2},
+		{1,2,3,6,7,8,5,4,9},
+		{7,4,8,5,2,9,1,6,3},
+		{6,5,2,7,8,1,3,9,4},
+		{9,8,1,3,4,5,2,7,6},
+		{3,7,4,9,6,2,8,1,5}
+	};
+	*/
+	//Parameter used for the rows and columns
+	parameters * primaryparam = (parameters *)malloc(sizeof(parameters));
+	primaryparam->row = 0;
+	primaryparam->col = 0;
+	primaryparam->sudoku = sudokucomplete;
+	
+	//The parameters below provide the locations for each of the 3 by 3 squares
+	//and where they start so that it does not need to be declared in each thread
+	parameters * squareparam1 = (parameters *)malloc(sizeof(parameters));
+	squareparam1->row = 0;
+	squareparam1->col = 0;
+	squareparam1->sudoku = sudokucomplete;
+
+	parameters * squareparam2 = (parameters *)malloc(sizeof(parameters));
+	squareparam2->row = 0;
+	squareparam2->col = 3;
+	squareparam2->sudoku = sudokucomplete;
+
+	parameters * squareparam3 = (parameters *)malloc(sizeof(parameters));
+	squareparam3->row = 0;
+	squareparam3->col = 6;
+	squareparam3->sudoku = sudokucomplete;
+
+	parameters * squareparam4 = (parameters *)malloc(sizeof(parameters));
+	squareparam4->row = 3;
+	squareparam4->col = 0;
+	squareparam4->sudoku = sudokucomplete;
+
+	parameters * squareparam5 = (parameters *)malloc(sizeof(parameters));
+	squareparam5->row = 3;
+	squareparam5->col = 3;
+	squareparam5->sudoku = sudokucomplete;
+
+	parameters * squareparam6 = (parameters *)malloc(sizeof(parameters));
+	squareparam6->row = 3;
+	squareparam6->col = 6;
+	squareparam6->sudoku = sudokucomplete;
+
+	parameters * squareparam7 = (parameters *)malloc(sizeof(parameters));
+	squareparam7->row = 6;
+	squareparam7->col = 0;
+	squareparam7->sudoku = sudokucomplete;
+
+	parameters * squareparam8 = (parameters *)malloc(sizeof(parameters));
+	squareparam8->row = 6;
+	squareparam8->col = 3;
+	squareparam8->sudoku = sudokucomplete;
+
+	parameters * squareparam9 = (parameters *)malloc(sizeof(parameters));
+	squareparam9->row = 6;
+	squareparam9->col = 6;
+	squareparam9->sudoku = sudokucomplete;
+
+	//creation of the 11 threads, using the posix thread library
+	pthread_t rows, 
+			cols, 
+			square1, 
+			square2, 
+			square3, 
+			square4, 
+			square5, 
+			square6, 
+			square7,
+			square8,
+			square9;
+
+	//creates locations for each of the return values of the void functions
+	//allows for final comparison in main that will confirm or decomfirm validation.
+	void * rowval;
+	void * colval;
+	void * sq1val;
+	void * sq2val;
+	void * sq3val;
+	void * sq4val;
+	void * sq5val;
+	void * sq6val;
+	void * sq7val;
+	void * sq8val;
+	void * sq9val;
+
+	//initializes each of the threads to run simultaneeously.
+	pthread_create(&rows, NULL, rowsvalid, (void *)primaryparam);
+	pthread_create(&cols, NULL, columnsvalid, (void *)primaryparam);
+	pthread_create(&square1, NULL, squaresvalid, (void *)squareparam1);
+	pthread_create(&square2, NULL, squaresvalid, (void *)squareparam2);
+	pthread_create(&square3, NULL, squaresvalid, (void *)squareparam3);
+	pthread_create(&square4, NULL, squaresvalid, (void *)squareparam4);
+	pthread_create(&square5, NULL, squaresvalid, (void *)squareparam5);
+	pthread_create(&square6, NULL, squaresvalid, (void *)squareparam6);
+	pthread_create(&square7, NULL, squaresvalid, (void *)squareparam7);
+	pthread_create(&square8, NULL, squaresvalid, (void *)squareparam8);
+	pthread_create(&square9, NULL, squaresvalid, (void *)squareparam9);
+
+	//joins and returns the threads, to ensure that all eleven outcomes are ready before 
+	//deciding on the validity of the sudoku array
+	pthread_join(rows, &rowval);
+	pthread_join(cols, &colval);
+	pthread_join(square1, &sq1val);
+	pthread_join(square2, &sq2val);
+	pthread_join(square3, &sq3val);
+	pthread_join(square4, &sq4val);
+	pthread_join(square5, &sq5val);
+	pthread_join(square6, &sq6val);
+	pthread_join(square7, &sq7val);
+	pthread_join(square8, &sq8val);
+	pthread_join(square9, &sq9val);
+
+	//calls on void function outcomes to decide whether or not the sudoku puzzle completed.
+	if ((int)rowval == 1 &&
+		(int)colval == 1 &&
+		(int)sq1val == 1 &&
+		(int)sq2val == 1 &&
+		(int)sq3val == 1 &&
+		(int)sq4val == 1 &&
+		(int)sq5val == 1 &&
+		(int)sq6val == 1 &&
+		(int)sq7val == 1 &&
+		(int)sq8val == 1 &&
+		(int)sq9val == 1) {
+		cout << "The inputted sudoku puzzle is valid." << endl;
+	}
+	else {
+		cout << "The inputted sudoku puzzle is invalid." << endl;
+	}
+
+	return 0;
+}
+
+//void function that validates the rows, returning a 0 if invalid and a 1 if valid.
+void * rowsvalid(void * params) {
+	parameters * data = (parameters *)params;
+	int startRow = data->row;
+	int startCol = data->col;
+	for (int i = startRow; i < 9; ++i) {
+		int row[10] = { 0 };
+		for (int j = startCol; j < 9; ++j) {
+			int val = data->sudoku[i][j];
+			if (row[val] != 0) {
+				return (void *)0;
+			}
+			else {
+				row[val] = 1;
+			}
+		}
+	}
+	return (void *)1;
+}
+
+//void function that validates the columns, returning a 0 if invalid or a 1 if valid.
+void * columnsvalid(void * params) {
+	parameters * data = (parameters *)params;
+	int startRow = data->row;
+	int startCol = data->col;
+	for (int i = startCol; i < 9; ++i) {
+		int col[10] = { 0 };
+		for (int j = startRow; j < 9; ++j) {
+			int val = data->sudoku[j][i];
+			if (col[val] != 0) {
+				return (void *)0;
+			}
+			else {
+				col[val] = 1;
+			}
+		}
+	}
+	return (void *)1;
+}
+
+
+//This void function checks a 3 by 3 square to make sure it is valid and has no error.
+//This function tackles one of the 9 squares, so calling this 9 times via threading
+//will allow for the validation of the squares to run simultaneously
+void * squaresvalid(void * params) {
+	parameters * data = (parameters *)params;
+	int startRow = data->row;
+	int startCol = data->col;
+	int saved[10] = { 0 };
+	for (int i = startRow; i < startRow + 3; ++i) {
+		for (int j = startCol; j < startCol + 3; ++j) {
+			int val = data->sudoku[i][j];
+			if (saved[val] != 0) {
+				return (void *)0;
+			}
+			else {
+				saved[val] = 1;
+			}
+		}
+	}
+	return (void *)1;
+}
